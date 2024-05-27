@@ -28,15 +28,12 @@ namespace nstd
     template<typename... Args>
     std::string format(const std::string& format, const Args&... args)
     {
-        int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
-        if (size_s <= 0) throw std::runtime_error("Error during formatting.");
-        auto size = static_cast<size_t>(size_s);
-        auto buf = std::make_unique<char[]>(size);
-        std::snprintf(buf.get(), size, format.c_str(), args...);
-        return std::string(buf.get(), buf.get() + size - 1);
+        int size_s = std::snprintf(nullptr, 0, format.c_str(), args...);
+        if (size_s < 0) throw std::runtime_error("Error during formatting");
+        std::string ret(size_s, '\x00');
+        std::snprintf(&ret[0], size_s + 1, format.c_str(), args...);
+        return ret;
     }
-
-
 }
 
 // Format exception

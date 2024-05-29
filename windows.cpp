@@ -3,8 +3,6 @@
 // Standard C/C++ Libraries:
 #include <map>
 #include <memory>
-#include <vector>
-
 
 // Standard Windows Headers:
 #include <tlhelp32.h>
@@ -108,35 +106,53 @@ namespace windows
             if (ite == root_keys.end())
                 throw nstd::runtime_error("unknown root key");
 
-            auto sub = path.substr(root_end + 1);
-            return RegOpenKeyExA(ite->second, sub.c_str(), 0, desired_access, &hKey);
+            auto sub = nstd::encoding::utf8_to_wide(path.substr(root_end + 1));
+            return RegOpenKeyExW(ite->second, sub.c_str(), 0, desired_access, &hKey);
         }
 
-        key::key(const std::string& path, DWORD desired_access)
+        key::key(const std::string& path, DWORD desired_access) : _path(path)
         {
             auto status = open(path, desired_access, _key);
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("open key error: %d", status);
         };
 
-        key::key(HKEY&& key) noexcept { _key = key; }
+        key::key(HKEY&& key, std::string&& path) noexcept : _path(std::move(path)), _key(key) {}
 
-        key::key(key&& key) noexcept
+        key::key(key&& key) noexcept : _key(key._key), _path(std::move(key._path))
         {
-            if (_key != NULL) RegCloseKey(_key);
-            _key = key._key;
-            key._key = NULL;
+            if (key._key != NULL)
+            {
+                RegCloseKey(key._key);
+                key._key = NULL;
+            }
         }
 
         key::~key() { if (_key != NULL) RegCloseKey(_key); }
 
+        const std::string& key::get_path() const noexcept { return _path; }
+
+        key key::subkey(const std::string& sub_path, DWORD desired_access) const
+        {
+            auto path = _path;
+            if (path.back() != '\\')
+                path += '\\';
+            path += sub_path;
+            return key(path, desired_access);
+        }
+
         key key::create_key(const std::string& name, DWORD desired_access)
         {
+            auto path = _path;
+            if (path.back() != '\\')
+                path += '\\';
+            path += name;
+
             HKEY hkey;
             auto status = RegCreateKeyExA(_key, name.c_str(), NULL, NULL, 0, desired_access, NULL, &hkey, NULL);
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("set value dword error: %d", status);
-            return key(std::move(hkey));
+            return key(std::move(hkey), std::move(path));
         }
 
         void key::set_dword(const std::string& name, DWORD value)
@@ -183,6 +199,91 @@ namespace windows
             auto status = RegSetKeyValueA(_key, NULL, name.c_str(), REG_MULTI_SZ, buffer.get(), static_cast<DWORD>(len));
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("set value multi string error: %d", status);
+        }
+
+        std::list<std::string> key::list_subkeys() const
+        {
+            DWORD count = 0;
+            DWORD max_len = 0;
+            auto error = RegQueryInfoKeyW(
+                _key,
+                NULL,
+                NULL,
+                NULL,
+                &count,
+                &max_len,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NULL);
+            if (error != ERROR_SUCCESS)
+                throw nstd::runtime_error("list subkeys error: %d", error);
+
+            std::list<std::string> ret;
+            std::vector<wchar_t> name(max_len + 1);
+            for (DWORD i = 0; i < count; i++)
+            {
+                DWORD len = max_len + 1;
+                error = RegEnumKeyExW(
+                    _key,
+                    i,
+                    &name[0],
+                    &len,
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL);
+                if (error != ERROR_SUCCESS)
+                    continue;
+
+                std::string utf8 = nstd::encoding::wide_to_utf8(std::wstring(&name[0], len));
+                ret.emplace_back(std::move(utf8));
+            }
+            return ret;
+        }
+        std::list<std::string> key::list_values() const
+        {
+            DWORD count = 0;
+            DWORD max_len = 0;
+            auto error = RegQueryInfoKeyW(
+                _key,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                &count,
+                &max_len,
+                NULL,
+                NULL,
+                NULL);
+            if (error != ERROR_SUCCESS)
+                throw nstd::runtime_error("list values error: %d", error);
+
+            std::list<std::string> ret;
+            std::vector<wchar_t> name(max_len + 1);
+            for (DWORD i = 0; i < count; i++)
+            {
+                DWORD len = max_len + 1;
+                error = RegEnumValueW(
+                    _key,
+                    i,
+                    &name[0],
+                    &len,
+                    NULL,
+                    NULL,
+                    NULL,
+                    NULL);
+                if (error != ERROR_SUCCESS)
+                    continue;
+
+                std::string utf8 = nstd::encoding::wide_to_utf8(std::wstring(&name[0], len));
+                ret.emplace_back(std::move(utf8));
+            }
+            return ret;
         }
     }
 }

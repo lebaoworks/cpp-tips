@@ -9,6 +9,7 @@
 
 // Standard C/C++ Libraries:
 #include <list>
+#include <vector>
 
 // Precompiled Headers:
 #include "nstd.hpp"
@@ -47,12 +48,19 @@ namespace windows
         {
         private:
             HKEY _key = NULL; // a valid value must not be NULL. Reference: https://stackoverflow.com/a/65723594
+            std::string _path;
+            
+            key(HKEY&& key, std::string&& path) noexcept;
+
         public:
             key(const std::string& sub, DWORD desired_access = KEY_ALL_ACCESS);
             key(const key& key) = delete;
-            key(HKEY&& key) noexcept;
             key(key&& key) noexcept;
             ~key();
+
+            const std::string& get_path() const noexcept;
+
+            key subkey(const std::string& sub_path, DWORD desired_access = KEY_ALL_ACCESS) const;
 
             key create_key(const std::string& name, DWORD desired_access = KEY_ALL_ACCESS);
 
@@ -60,6 +68,15 @@ namespace windows
             void set_string(const std::string& name, const std::string& value);
             void set_expand_string(const std::string& name, const std::string& value);
             void set_multi_string(const std::string& name, const std::initializer_list<std::string>& values);
+
+            std::vector<uint8_t> get_raw(const std::string& name, DWORD& type) const;
+            DWORD get_dword(const std::string& name) const;
+            std::string get_string(const std::string& name) const;
+            std::string get_expand_string(const std::string& name) const;
+            std::list<std::string> get_multi_string(const std::string& name) const;
+
+            std::list<std::string> list_subkeys() const;
+            std::list<std::string> list_values() const;
         };
     }
 }

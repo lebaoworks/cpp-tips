@@ -1,8 +1,87 @@
-#include "nstd.hpp"
 #include "windows.hpp"
 
+// Standard C/C++ Libraries:
 #include <map>
 #include <memory>
+#include <vector>
+
+
+// Standard Windows Headers:
+#include <tlhelp32.h>
+
+namespace windows
+{
+    namespace process
+    {
+        std::list<process_info> list_processes()
+        {
+            auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if (snapshot == INVALID_HANDLE_VALUE)
+                throw nstd::runtime_error("snapshot process error %d", GetLastError());
+            defer { CloseHandle(snapshot); };
+
+            PROCESSENTRY32W pe;
+            pe.dwSize = sizeof(PROCESSENTRY32W);
+            if (Process32FirstW(snapshot, &pe) == FALSE)
+                throw nstd::runtime_error("find snapshot first process error: %d", GetLastError());
+            
+            std::list<process_info> ret;
+            do
+            {
+                process_info pi;
+                pi.process_id = pe.th32ProcessID;
+                pi.process_name = pe.szExeFile;
+                ret.emplace_back(std::move(pi));
+            } while (Process32NextW(snapshot, &pe));
+
+            return ret;
+        }
+
+        process::process(DWORD process_id, DWORD desired_access)
+        {
+            _handle = OpenProcess(desired_access, FALSE, process_id);
+            if (_handle == NULL)
+                throw nstd::runtime_error("open process error %d", GetLastError());
+        }
+        
+        process::~process()
+        {
+            CloseHandle(_handle);
+        }
+
+        bool process::search_memory(const void* data, size_t size)
+        {
+            if (data == nullptr)
+                throw std::invalid_argument("null data");
+
+            SYSTEM_INFO si;
+            GetSystemInfo(&si);
+
+            MEMORY_BASIC_INFORMATION info;
+            std::vector<uint8_t> chunk(0x10000);
+            void* p = nullptr;
+            while (p < si.lpMaximumApplicationAddress)
+            {
+                if (VirtualQueryEx(_handle, p, &info, sizeof(info)) != sizeof(info))
+                    break;
+                p = info.BaseAddress;
+                if (info.AllocationProtect != 0 &&
+                    info.Protect != 0 &&
+                    info.State != MEM_RESERVE)
+                {
+                    chunk.resize(info.RegionSize);
+                    SIZE_T read;
+                    if (ReadProcessMemory(_handle, p, &chunk[0], info.RegionSize, &read))
+                        for (size_t i = 0; i < (read - size); ++i)
+                            if (memcmp(data, &chunk[i], size) == 0)
+                                return true;
+                }
+                p = reinterpret_cast<void*>(reinterpret_cast<ULONG_PTR>(p) + info.RegionSize);
+            }
+            return false;
+        }
+    }
+}
 
 namespace windows
 {
@@ -33,9 +112,9 @@ namespace windows
             return RegOpenKeyExA(ite->second, sub.c_str(), 0, desired_access, &hKey);
         }
 
-        key::key(const std::string& path, DWORD access_desired)
+        key::key(const std::string& path, DWORD desired_access)
         {
-            auto status = open(path, access_desired, _key);
+            auto status = open(path, desired_access, _key);
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("open key error: %d", status);
         };
@@ -51,10 +130,10 @@ namespace windows
 
         key::~key() { if (_key != NULL) RegCloseKey(_key); }
 
-        key key::create_key(const std::string& name, DWORD access_desired)
+        key key::create_key(const std::string& name, DWORD desired_access)
         {
             HKEY hkey;
-            auto status = RegCreateKeyExA(_key, name.c_str(), NULL, NULL, 0, access_desired, NULL, &hkey, NULL);
+            auto status = RegCreateKeyExA(_key, name.c_str(), NULL, NULL, 0, desired_access, NULL, &hkey, NULL);
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("set value dword error: %d", status);
             return key(std::move(hkey));

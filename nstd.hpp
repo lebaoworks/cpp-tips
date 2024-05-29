@@ -48,6 +48,13 @@ namespace nstd
         runtime_error(const std::string& format, const Args&... args) :
             std::runtime_error(nstd::format(format, args...)) {}
     };
+
+    struct invalid_argument : public std::invalid_argument
+    {
+        template<typename... Args>
+        invalid_argument(const std::string& format, const Args&... args) :
+            std::invalid_argument(nstd::format(format, args...)) {}
+    };
 }
 
 // Encoding

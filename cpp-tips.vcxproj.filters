@@ -30,6 +30,9 @@
     <ClCompile Include="nstd_test.cpp">
       <Filter>nstd</Filter>
     </ClCompile>
+    <ClCompile Include="windows_test.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="nstd.hpp">

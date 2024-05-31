@@ -134,6 +134,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nstd_test.cpp" />
     <ClCompile Include="windows.cpp" />
+    <ClCompile Include="windows_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="nstd.hpp" />

@@ -20,21 +20,51 @@ namespace windows
     {
         struct process_info
         {
-            DWORD process_id;
-            std::wstring process_name;
+            DWORD id;
+            std::wstring name;
+            DWORD parent_id;
         };
 
-        std::list<process_info> list_processes();
+        std::list<process_info> list();
 
         class process
         {
         private:
             HANDLE _handle = NULL;
         public:
+            
+            //
+            // Constructors
+            // 
+            
+            // Open current process with all access.
+            process();
+
+            // Open process with desired_access.
             process(DWORD process_id, DWORD desired_access = PROCESS_ALL_ACCESS);
+            
             ~process();
 
-            bool search_memory(const void* data, size_t size);
+            //
+            // Observers
+            // 
+
+            // Get process image path.
+            // Required desired_access:
+            //      PROCESS_QUERY_INFORMATION
+            std::wstring image_path() const;
+
+            // Get process command line
+            // Required desired_access:
+            //      PROCESS_QUERY_INFORMATION
+            //      PROCESS_VM_READ
+            std::wstring command_line() const;
+
+            // Check if process memory space contains data.
+            // Required desired_access:
+            //      PROCESS_QUERY_INFORMATION
+            //      PROCESS_VM_READ
+            bool search_memory(const void* data, size_t size) const;
         };
     }
 }

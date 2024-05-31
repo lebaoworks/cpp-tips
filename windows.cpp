@@ -7,11 +7,17 @@
 // Standard Windows Headers:
 #include <tlhelp32.h>
 
+#pragma comment(lib, "ntdll.lib")
+#include <Winternl.h>
+#ifndef STATUS_SUCCESS
+#define STATUS_SUCCESS 0
+#endif
+
 namespace windows
 {
     namespace process
     {
-        std::list<process_info> list_processes()
+        std::list<process_info> list()
         {
             auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
             if (snapshot == INVALID_HANDLE_VALUE)
@@ -27,17 +33,23 @@ namespace windows
             do
             {
                 process_info pi;
-                pi.process_id = pe.th32ProcessID;
-                pi.process_name = pe.szExeFile;
+                pi.id = pe.th32ProcessID;
+                pi.name = pe.szExeFile;
+                pi.parent_id = pe.th32ParentProcessID;
                 ret.emplace_back(std::move(pi));
             } while (Process32NextW(snapshot, &pe));
 
             return ret;
         }
 
+        process::process() : _handle(GetCurrentProcess()) {}
+
         process::process(DWORD process_id, DWORD desired_access)
         {
-            _handle = OpenProcess(desired_access, FALSE, process_id);
+            _handle = OpenProcess(
+                desired_access,     // Desired access
+                FALSE,              // Inherit -> Child processes do not need this handle
+                process_id);        // Process id
             if (_handle == NULL)
                 throw nstd::runtime_error("open process error %d", GetLastError());
         }
@@ -47,7 +59,67 @@ namespace windows
             CloseHandle(_handle);
         }
 
-        bool process::search_memory(const void* data, size_t size)
+        std::wstring process::image_path() const
+        {
+            std::vector<WCHAR> buffer(MAX_PATH);
+            while (true)
+            {
+                DWORD cch_written = static_cast<DWORD>(buffer.size());
+                BOOL success = QueryFullProcessImageNameW(
+                    _handle,                // Process handle
+                    0,                      // Flags -> 0 for Win32 Path
+                    &buffer[0],             // ImagePath
+                    &cch_written);          // Number of written characters.
+                if (success == TRUE)
+                    return std::wstring(&buffer[0], cch_written);
+
+                DWORD err = GetLastError();
+                if (err == ERROR_INSUFFICIENT_BUFFER)
+                {
+                    // Win32 path length is limited within half of USHORT (UNICODE_STRING.MaxLength / sizeof(WCHAR))
+                    if (buffer.size() > MAXSHORT)
+                        throw std::runtime_error("invalid size");
+                    buffer.resize(buffer.size() * 2);
+                }
+                else
+                    throw nstd::runtime_error("query error: %d", err);
+            }
+        }
+
+        std::wstring process::command_line() const
+        {
+            // Get the address of the PEB
+            PROCESS_BASIC_INFORMATION pbi = {};
+            NTSTATUS status = NtQueryInformationProcess(
+                _handle,                    // Process handle
+                ProcessBasicInformation,    // Information class
+                &pbi,                       // Information
+                sizeof(pbi),                // Information size in bytes.
+                NULL);                      // Returned size in bytes -> Don't care
+            if (status != STATUS_SUCCESS)
+                throw nstd::runtime_error("query pbi status: %X", status);
+            if (pbi.PebBaseAddress == NULL)
+                throw nstd::runtime_error("peb address null");
+
+            // Get the address of the process parameters in the PEB
+            PEB peb = {};
+            if (ReadProcessMemory(_handle, pbi.PebBaseAddress, &peb, sizeof(peb), NULL) == FALSE)
+                throw nstd::runtime_error("read peb error: %X", GetLastError());
+
+            // Get the command line arguments from the process parameters
+            RTL_USER_PROCESS_PARAMETERS params = {};
+            if (ReadProcessMemory(_handle, peb.ProcessParameters, &params, sizeof(params), NULL) == FALSE)
+                throw nstd::runtime_error("read process parameters error: %d", GetLastError());
+
+            void* command_line_addr = params.CommandLine.Buffer;
+            size_t command_line_cch = params.CommandLine.Length / sizeof(WCHAR);
+            std::vector<WCHAR> buffer(command_line_cch);
+            if (ReadProcessMemory(_handle, command_line_addr, buffer.data(), command_line_cch * sizeof(WCHAR), NULL) == FALSE)
+                throw nstd::runtime_error("read process command line error: %d", GetLastError());
+            return std::wstring(buffer.data(), buffer.size());
+        }
+
+        bool process::search_memory(const void* data, size_t size) const
         {
             if (data == nullptr)
                 throw std::invalid_argument("null data");

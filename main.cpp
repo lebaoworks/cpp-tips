@@ -47,19 +47,6 @@ void search_registry_value()
         printf("%s\n", value_name.c_str());
 }
 
-int main()
-{
-    try
-    {
-        //search_memory("bao", 3);
-        search_registry_value();
+#include "utest.h"
 
-        return 0;
-    }
-    catch (std::exception& e)
-    {
-        printf("Exception: %s\n", e.what());
-        return 1;
-    }
-
-}
+UTEST_MAIN()

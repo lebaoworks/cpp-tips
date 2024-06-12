@@ -1,3 +1,5 @@
-﻿#include "utest.h"
+﻿#include "nstd.hpp"
+
+#include "utest.h"
 
 UTEST_MAIN()

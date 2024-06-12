@@ -32,7 +32,6 @@ UTEST(nstd_exception, exception)
     ASSERT_EXCEPTION_WITH_MESSAGE(throw nstd::invalid_argument("%s y", "exception"), std::invalid_argument, "exception y");
 }
 
-
 UTEST(nstd_encoding, utf8_to_wide)
 {
     const void* utf8 = "\x42\xE1\xBA\xA3\x6F";
@@ -59,4 +58,21 @@ UTEST(nstd_encoding, wide_to_utf8)
 
     auto expected = std::string(reinterpret_cast<const char*>(utf8), 5);
     ASSERT_EQ(utf8_str, expected);
+}
+
+UTEST(nstd_hash, SHA256)
+{
+    nstd::hash::SHA256 sha256;
+    sha256.feed("lebaoworks@gmail", 16);
+
+    // 1
+    auto hex = sha256.hex_digest();
+    EXPECT_EQ(hex, "D736285BCBE504A601B7A01ECBC0DAD88E95DB846110CC3A0F50A176B1439720");
+
+    // 2
+    EXPECT_EQ(hex, sha256.hex_digest());
+
+    // 3
+    sha256.feed(".com", 4);
+    EXPECT_EQ(sha256.hex_digest(), "7A0E47BC9465926BE31799E54885F33B42550AB40BB222617AAFC71715579AC6");
 }

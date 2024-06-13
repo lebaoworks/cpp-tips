@@ -140,3 +140,35 @@ UTEST(nstd_hash, SHA256)
         EXPECT_EQ(hex, "C48EF574E6D59BD0DEFA5D1002EE0B8A2B42C16982A798FDD73F2A2D5E19FE70");
     }
 }
+
+struct nstd_hash_benchmark
+{
+    std::string data;
+    size_t size;
+};
+UTEST_F_SETUP(nstd_hash_benchmark)
+{
+    utest_fixture->size = 5000000;
+    utest_fixture->data = std::string(utest_fixture->size, 0);
+}
+UTEST_F_TEARDOWN(nstd_hash_benchmark)
+{}
+
+UTEST_F(nstd_hash_benchmark, MD5)
+{
+    nstd::hash::MD5 hash;
+    hash.feed(utest_fixture->data.data(), utest_fixture->size);
+    auto hex = hash.hex_digest();
+}
+UTEST_F(nstd_hash_benchmark, SHA1)
+{
+    nstd::hash::SHA1 hash;
+    hash.feed(utest_fixture->data.data(), utest_fixture->size);
+    auto hex = hash.hex_digest();
+}
+UTEST_F(nstd_hash_benchmark, SHA256)
+{
+    nstd::hash::SHA256 hash;
+    hash.feed(utest_fixture->data.data(), utest_fixture->size);
+    auto hex = hash.hex_digest();
+}

@@ -187,7 +187,7 @@ namespace nstd
                 uint32_t m_bits[2] = { 0 };
                 uint8_t m_in[64] = { 0 };
 
-                static void to_little_endian_4bytes(void* data, size_t size)
+                static void to_little_endian_4bytes(void* data, size_t size) noexcept
                 {
                     auto d = reinterpret_cast<uint8_t*>(data);
 
@@ -211,7 +211,7 @@ namespace nstd
                     w += x;
                 }
 
-                static inline void transform(uint32_t buf[4], const uint32_t in[16])
+                static inline void transform(uint32_t buf[4], const uint32_t in[16]) noexcept
                 {
                     uint32_t a = buf[0];
                     uint32_t b = buf[1];

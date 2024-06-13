@@ -19,6 +19,9 @@
     <Filter Include="test">
       <UniqueIdentifier>{4c25f01b-0e83-439d-963c-c0e0b730b7ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ntfs">
+      <UniqueIdentifier>{924f33d3-5ba7-4037-a082-0eea2cbf781f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -33,16 +36,22 @@
     <ClCompile Include="windows_test.cpp">
       <Filter>windows</Filter>
     </ClCompile>
+    <ClCompile Include="ntfs_test.cpp">
+      <Filter>ntfs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="nstd.hpp">
-      <Filter>nstd</Filter>
-    </ClInclude>
     <ClInclude Include="windows.hpp">
       <Filter>windows</Filter>
     </ClInclude>
     <ClInclude Include="utest.h">
       <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="nstd.hpp">
+      <Filter>nstd</Filter>
+    </ClInclude>
+    <ClInclude Include="ntfs.hpp">
+      <Filter>ntfs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

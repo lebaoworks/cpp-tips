@@ -133,11 +133,13 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nstd_test.cpp" />
+    <ClCompile Include="ntfs_test.cpp" />
     <ClCompile Include="windows.cpp" />
     <ClCompile Include="windows_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="nstd.hpp" />
+    <ClInclude Include="ntfs.hpp" />
     <ClInclude Include="utest.h" />
     <ClInclude Include="windows.hpp" />
   </ItemGroup>

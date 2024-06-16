@@ -61,6 +61,20 @@ UTEST(windows_regisry, string)
     EXPECT_EQ(value, L"zxc");
 }
 
+UTEST(windows_registry, list_subkeys)
+{
+    auto key = windows::registry::key(L"HKEY_CURRENT_USER", KEY_ALL_ACCESS);
+    auto subkeys = key.list_subkeys();
+    ASSERT_GT(subkeys.size(), 0);
+}
+
+UTEST(windows_registry, list_values)
+{
+    auto key = windows::registry::key(L"HKEY_CURRENT_USER\\Environment", KEY_ALL_ACCESS);
+    auto values = key.list_values();
+    ASSERT_GT(values.size(), 0);
+}
+
 UTEST(windows_regisry, expand_string)
 {
     auto key = windows::registry::key(L"HKEY_CURRENT_USER", KEY_ALL_ACCESS);
@@ -101,3 +115,5 @@ UTEST(windows_event_log, log)
     windows::event_log::log logger2(L"test_2");
     logger2.info("qwe");
 }
+
+

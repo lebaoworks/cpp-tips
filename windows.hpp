@@ -18,9 +18,36 @@ namespace windows
 {
     namespace file
     {
-        struct file_info {};
+        struct file_info
+        {
+            std::wstring name;
+            DWORD attributes;
+            size_t size;
+            FILETIME creation_time;
+            FILETIME last_access_time;
+            FILETIME last_write_time;
+
+            /// @brief Check if the file is a directory.
+            /// @return true if it is, false otherwise.
+            bool is_directory() const noexcept;
+        };
+
+        /// @brief List all files in the directory.
+        /// @param path directory path.
+        /// @return list of files.
         std::list<file_info> list(const std::wstring& path);
 
+    }
+}
+
+namespace windows
+{
+    namespace disk
+    {
+        /// @brief List all disks.
+        /// @return list of disks.
+        /// @note currently only list fixed and removable drives.
+        std::list<std::string> list_logical();
     }
 }
 
@@ -35,6 +62,8 @@ namespace windows
             DWORD parent_id = 0;
         };
 
+        /// @brief List all running processes.
+        /// @return list of processes.
         std::list<process_info> list();
 
         class process
@@ -43,37 +72,32 @@ namespace windows
             HANDLE _handle = NULL;
         public:
             
-            //
-            // Constructors
-            // 
-            
-            // Open current process with all access.
+            /// @brief Default constructor. Object is reference to current process.
             process();
 
-            // Open process with desired_access.
+            /// @brief Open process by process id.
+            /// @param process_id process id.
+            /// @param desired_access access to the process.
             process(DWORD process_id, DWORD desired_access = PROCESS_ALL_ACCESS);
             
+            /// @brief Destructor.
             ~process();
 
-            //
-            // Observers
-            // 
-
-            // Get process image path.
-            // Required desired_access:
-            //      PROCESS_QUERY_INFORMATION
+            /// @brief Get process image full path.
+            /// @return Full path to the process image.
+            /// @note require `PROCESS_QUERY_INFORMATION` access.
             std::wstring image_path() const;
 
-            // Get process command line
-            // Required desired_access:
-            //      PROCESS_QUERY_INFORMATION
-            //      PROCESS_VM_READ
+            /// @brief Get process command line.
+            /// @return Command line of the process.
+            /// @note require `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ` access.
             std::wstring command_line() const;
 
-            // Check if process memory space contains data.
-            // Required desired_access:
-            //      PROCESS_QUERY_INFORMATION
-            //      PROCESS_VM_READ
+            /// @brief Search memory space of the process.
+            /// @param data data to search.
+            /// @param size size of the data.
+            /// @return true if data found, false otherwise.
+            /// @note require `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ` access.
             bool search_memory(const void* data, size_t size) const;
         };
     }
@@ -208,7 +232,6 @@ namespace windows
         };
     }
 }
-
 
 namespace windows
 {

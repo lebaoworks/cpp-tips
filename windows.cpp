@@ -16,6 +16,75 @@
 
 namespace windows
 {
+    namespace file
+    {
+        bool file_info::is_directory() const noexcept
+        {
+            return (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+        }
+
+        std::list<file_info> list(const std::wstring& path)
+        {
+            WIN32_FIND_DATAW data;
+            auto handle = FindFirstFileW((path + L"\\*").c_str(), &data);
+            if (handle == INVALID_HANDLE_VALUE)
+                throw nstd::runtime_error("find first file error: %d", GetLastError());
+            defer{ FindClose(handle); };
+
+            std::list<file_info> ret;
+            do
+            {
+                if (wcscmp(data.cFileName, L".") == 0 || wcscmp(data.cFileName, L"..") == 0)
+                    continue;
+
+                file_info fi;
+                fi.name = data.cFileName;
+                fi.size = (static_cast<uint64_t>(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
+                fi.creation_time = data.ftCreationTime;
+                fi.last_access_time = data.ftLastAccessTime;
+                fi.last_write_time = data.ftLastWriteTime;
+                fi.attributes = data.dwFileAttributes;
+                ret.emplace_back(std::move(fi));
+            } while (FindNextFileW(handle, &data) == TRUE);
+
+            return ret;
+        }
+    }
+}
+
+namespace windows
+{
+    namespace disk
+    {
+        std::list<std::string> list_logical()
+        {
+            std::list<std::string> drives;
+            char buffer[256];
+            DWORD needed = GetLogicalDriveStringsA(sizeof(buffer), buffer);
+
+            if (needed == 0)
+                throw nstd::runtime_error("GetLogicalDriveStringsA error: %d", GetLastError());
+            if (needed > sizeof(buffer))
+                throw nstd::runtime_error("GetLogicalDriveStringsA buffer too small: %d", needed);
+
+            for (char* p = buffer; p < buffer + 256;)
+            {
+                std::string drive = p;
+                UINT driveType = GetDriveTypeA(drive.c_str());
+                if (driveType == DRIVE_FIXED ||
+                    driveType == DRIVE_REMOVABLE)
+                    drives.push_back(drive);
+
+                p += drive.length() + 1;
+            }
+
+            return drives;
+        }
+    }
+}
+
+namespace windows
+{
     namespace process
     {
         std::list<process_info> list()

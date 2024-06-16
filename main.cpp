@@ -112,3 +112,79 @@ UTEST(main, scan_files)
         }
     }
 }
+
+
+#include <fstream>
+UTEST(main, mark_files)
+{
+    UTEST_SKIP("skip mark_files test");
+
+    std::ofstream marker("file_marker.txt");
+    ASSERT_EQ(marker.is_open(), true);
+
+    std::queue<std::wstring> pending;
+    for (auto& drive : windows::disk::list_logical())
+        pending.push(nstd::encoding::utf8_to_wide(drive));
+
+    while (!pending.empty())
+    {
+        auto dir_path = std::move(pending.front());
+        pending.pop();
+
+        // skip directories that we don't have access to
+        try
+        {
+            for (const auto& file : windows::file::list(dir_path))
+            {
+                auto file_path = dir_path + (dir_path.back() != L'\\' ? L"\\" : L"") + file.name;
+
+                // if the file is a directory, add it to the pending list
+                if (file.is_directory())
+                {
+                    pending.push(file_path);
+                    continue;
+                }
+                // if the file is a regular file, scan it
+                else
+                {
+                    marker << nstd::encoding::wide_to_utf8(file_path) << std::endl;
+                }
+            }
+        }
+        catch (std::exception& e)
+        {
+            std::wcerr << dir_path << " -> " << e.what() << std::endl;
+        }
+    }
+}
+
+
+#include <unordered_map>
+UTEST(main, mark_files_md5)
+{
+    std::ifstream marker2("file_marker2.txt");
+    ASSERT_EQ(marker2.is_open(), true);
+
+    std::ofstream marker("file_marker.txt");
+    ASSERT_EQ(marker.is_open(), true);
+
+    std::unordered_map<std::string, std::wstring> files;
+    for (std::string line; std::getline(marker2, line);)
+    {
+        auto file_path = nstd::encoding::utf8_to_wide(line);
+        nstd::hash::MD5 md5;
+        md5.feed(file_path.c_str(), file_path.size() * sizeof(wchar_t));
+
+        auto hex = md5.hex_digest();
+        auto found = files.find(hex);
+        if (found == files.end())
+        {
+            files[hex] = file_path;
+            marker << hex << std::endl;
+        }
+        else
+        {
+            std::wcout << L"DUPLICATE: " << file_path << L" -> " << files[hex] << std::endl;
+        }
+    }
+}

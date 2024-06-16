@@ -1,6 +1,7 @@
-#include "windows.hpp"
+﻿#include "windows.hpp"
 
 // Standard C/C++ Libraries:
+#include <algorithm>
 #include <map>
 #include <memory>
 
@@ -157,128 +158,231 @@ namespace windows
 {
     namespace registry
     {
-        static std::map<std::string, HKEY> root_keys = {
-            {"HKEY_CLASSES_ROOT", HKEY_CLASSES_ROOT },
-            {"HKEY_LOCAL_MACHINE", HKEY_LOCAL_MACHINE },
-            {"HKEY_CURRENT_USER", HKEY_CURRENT_USER },
-            {"HKEY_USERS", HKEY_LOCAL_MACHINE },
+        static std::map<std::wstring, HKEY> root_keys = {
+            {L"HKEY_CLASSES_ROOT", HKEY_CLASSES_ROOT },
+            {L"HKEY_LOCAL_MACHINE", HKEY_LOCAL_MACHINE },
+            {L"HKEY_CURRENT_USER", HKEY_CURRENT_USER },
+            {L"HKEY_USERS", HKEY_USERS },
         };
 
-        LSTATUS open(const std::string& path, DWORD desired_access, HKEY& hKey)
+        key::key(const std::wstring& path, DWORD desired_access)
         {
-            auto root_end = path.find("\\");
-            if (root_end == std::string::npos)
-            {
-                auto ite = root_keys.find(path);
-                if (ite == root_keys.end())
-                    throw nstd::runtime_error("unknown root key");
-                return RegOpenKeyExA(ite->second, NULL, 0, desired_access, &hKey);
-            }
-            auto ite = root_keys.find(path.substr(0, root_end));
+            // Trim \ character from the end of the path
+            _path = std::wstring(path.begin(), std::find_if(path.begin(), path.end(), [](wchar_t ch) { return ch == L'\\'; }));
+
+            auto root_end = path.find(L"\\");
+            std::wstring root = root_end == std::wstring::npos ? path : path.substr(0, root_end);
+            std::wstring sub = root_end == std::wstring::npos ? L"" : path.substr(root_end + 1);
+
+            auto ite = root_keys.find(root);
             if (ite == root_keys.end())
-                throw nstd::runtime_error("unknown root key");
-
-            auto sub = nstd::encoding::utf8_to_wide(path.substr(root_end + 1));
-            return RegOpenKeyExW(ite->second, sub.c_str(), 0, desired_access, &hKey);
-        }
-
-        key::key(const std::string& path, DWORD desired_access) : _path(path)
-        {
-            auto status = open(path, desired_access, _key);
+                throw nstd::invalid_argument("invalid root key");
+            auto status = RegOpenKeyExW(ite->second, sub.c_str(), 0, desired_access, &_handle);
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("open key error: %d", status);
         };
+        
+        key::key(HKEY&& key, std::wstring&& path) noexcept : _handle(key), _path(std::move(path)) { key = NULL; }
 
-        key::key(HKEY&& key, std::string&& path) noexcept : _path(std::move(path)), _key(key) {}
-
-        key::key(key&& key) noexcept : _key(key._key), _path(std::move(key._path))
+        key::key(key&& key) noexcept : _handle(key._handle), _path(std::move(key._path))
         {
-            if (key._key != NULL)
-            {
-                RegCloseKey(key._key);
-                key._key = NULL;
-            }
+            key._handle = NULL;
+            key._path.clear();
         }
 
-        key::~key() { if (_key != NULL) RegCloseKey(_key); }
+        key::~key() { if (_handle != NULL) RegCloseKey(_handle); }
 
-        const std::string& key::get_path() const noexcept { return _path; }
+        const std::wstring& key::get_path() const noexcept { return _path; }
 
-        key key::subkey(const std::string& sub_path, DWORD desired_access) const
+        key key::open_key(const std::wstring& key_name, DWORD desired_access) const
         {
-            auto path = _path;
-            if (path.back() != '\\')
-                path += '\\';
-            path += sub_path;
-            return key(path, desired_access);
+            if (key_name.find(L"\\") != std::wstring::npos)
+                throw std::invalid_argument("invalid name");
+
+            HKEY handle;
+            auto status = RegOpenKeyExW(_handle, key_name.c_str(), 0, desired_access, &handle);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("open sub key error: %d", status);
+            // Clean-up
+            defer { if (handle != NULL) CloseHandle(handle); };
+
+            return key(std::move(handle), _path + L"\\" + key_name);
         }
 
-        key key::create_key(const std::string& name, DWORD desired_access)
+        key key::create_key(const std::wstring& key_name, DWORD desired_access)
         {
-            auto path = _path;
-            if (path.back() != '\\')
-                path += '\\';
-            path += name;
+            if (key_name.find(L"\\") != std::wstring::npos)
+                throw std::invalid_argument("invalid name");
 
-            HKEY hkey;
-            auto status = RegCreateKeyExA(_key, name.c_str(), NULL, NULL, 0, desired_access, NULL, &hkey, NULL);
+            HKEY handle;
+            auto status = RegCreateKeyExW(_handle, key_name.c_str(), NULL, NULL, 0, desired_access, NULL, &handle, NULL);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("create sub key error: %d", status);
+            return key(std::move(handle), _path + L"\\" + key_name);
+        }
+
+        void key::delete_key(const std::wstring& key_name)
+        {                
+            auto status = RegDeleteTreeW(_handle, key_name.c_str());
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("delete key error: %d", status);
+        }
+
+        void key::delete_value(const std::wstring& value_name)
+        {
+            auto status = RegDeleteKeyValueW(_handle, NULL, value_name.c_str());
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("delete value error: %d", status);
+        }
+        
+        void key::set_dword(const std::wstring& value_name, DWORD value)
+        {
+            auto status = RegSetKeyValueW(_handle, NULL, value_name.c_str(), REG_DWORD, &value, sizeof(value));
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("set value dword error: %d", status);
-            return key(std::move(hkey), std::move(path));
         }
 
-        void key::set_dword(const std::string& name, DWORD value)
+        void key::set_string(const std::wstring& value_name, const std::wstring& value)
         {
-            auto status = RegSetKeyValueA(_key, NULL, name.c_str(), REG_DWORD, &value, sizeof(value));
-            if (status != ERROR_SUCCESS)
-                throw nstd::runtime_error("set value dword error: %d", status);
-        }
-
-        void key::set_string(const std::string& name, const std::string& value)
-        {
-            if (value.length() >= 0xFFFFFFFF)
-                throw std::runtime_error("value too long");
-            auto status = RegSetKeyValueA(_key, NULL, name.c_str(), REG_SZ, value.c_str(), static_cast<DWORD>(value.length() + 1));
+            // Size in bytes includes null terminating character.
+            size_t cb_size = (value.length() + 1) * sizeof(wchar_t);
+            if (cb_size > MAXDWORD)
+                throw std::invalid_argument("string too long");
+            auto status = RegSetKeyValueW(_handle, NULL, value_name.c_str(), REG_SZ, value.c_str(), static_cast<DWORD>(cb_size));
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("set value string error: %d", status);
         }
 
-        void key::set_expand_string(const std::string& name, const std::string& value)
+        void key::set_expand_string(const std::wstring& value_name, const std::wstring& value)
         {
-            if (value.length() >= 0xFFFFFFFF)
-                throw std::runtime_error("value too long");
-            auto status = RegSetKeyValueA(_key, NULL, name.c_str(), REG_EXPAND_SZ, value.c_str(), static_cast<DWORD>(value.length() + 1));
+            size_t cb_size = (value.length() + 1) * sizeof(wchar_t);
+            if (cb_size > MAXDWORD)
+                throw std::invalid_argument("string too long");
+            auto status = RegSetKeyValueW(_handle, NULL, value_name.c_str(), REG_EXPAND_SZ, value.c_str(), static_cast<DWORD>(cb_size));
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("set value expand string error: %d", status);
         }
 
-        void key::set_multi_string(const std::string& name, const std::initializer_list<std::string>& values)
+        void key::set_multi_string(const std::wstring& value_name, const std::list<std::wstring>& values)
         {
-            size_t len = 1;
+            size_t cb_size = 2;
             for (auto& value : values)
-                len += value.length() + 1;
-            if (len >= 0xFFFFFFFF)
-                throw std::runtime_error("value too long");
+                cb_size += (value.length() + 1) * sizeof(wchar_t);
+            if (cb_size > MAXDWORD)
+                throw std::invalid_argument("string too long");
 
-            auto buffer = std::make_unique<char[]>(len);
-            std::memset(buffer.get(), 0, len);
-            auto ptr = buffer.get();
+            auto buffer = std::make_unique<uint8_t[]>(cb_size);
+            uint8_t* ptr = buffer.get();
             for (auto& value : values)
             {
-                std::memcpy(ptr, value.c_str(), value.length());
-                ptr += value.length() + 1;
+                size_t size_to_write = (value.length() + 1) * sizeof(wchar_t);
+                std::memcpy(ptr, value.c_str(), size_to_write);                
+                ptr += size_to_write;
             }
-            auto status = RegSetKeyValueA(_key, NULL, name.c_str(), REG_MULTI_SZ, buffer.get(), static_cast<DWORD>(len));
+            // Write last terminating character
+            *reinterpret_cast<wchar_t*>(ptr) = NULL;
+
+            auto status = RegSetKeyValueW(_handle, NULL, value_name.c_str(), REG_MULTI_SZ, buffer.get(), static_cast<DWORD>(cb_size));
             if (status != ERROR_SUCCESS)
                 throw nstd::runtime_error("set value multi string error: %d", status);
         }
 
-        std::list<std::string> key::list_subkeys() const
+        DWORD key::get_dword(const std::wstring& value_name) const
+        {
+            DWORD ret;
+            DWORD cb_size = sizeof(DWORD);
+            auto status = RegGetValueW(_handle, NULL, value_name.c_str(), RRF_RT_REG_DWORD, NULL, reinterpret_cast<LPBYTE>(&ret), &cb_size);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("read value dword error: %d", status);
+            return ret;
+        }
+
+        std::wstring key::get_string(const std::wstring& value_name) const
+        {
+            DWORD type;
+            DWORD cb_size = 0;
+            auto status = RegQueryValueExW(_handle, value_name.c_str(), NULL, NULL, NULL, &cb_size);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("read value error: %d", status);
+
+            std::wstring ret((cb_size+1) / 2, 0);
+            status = RegQueryValueExW(_handle, value_name.c_str(), NULL, &type, reinterpret_cast<LPBYTE>(&ret[0]), &cb_size);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("read value error: %d", status);
+            if (type != REG_SZ)
+                throw nstd::runtime_error("type mismatch");
+            
+            ret.resize(wcsnlen(ret.c_str(), cb_size / 2));
+            return ret;
+        }
+
+        std::wstring key::get_expand_string(const std::wstring& value_name, bool expand) const
+        {
+            DWORD cb_size = 0;
+            auto status = RegQueryValueExW(_handle, value_name.c_str(), NULL, NULL, NULL, &cb_size);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("read value error: %d", status);
+
+            DWORD type;
+            std::wstring ret((cb_size + 1) / 2, 0);
+            status = RegQueryValueExW(_handle, value_name.c_str(), NULL, &type, reinterpret_cast<LPBYTE>(&ret[0]), &cb_size);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("read expand string error: %d", status);
+            if (type != REG_EXPAND_SZ)
+                throw nstd::runtime_error("type mismatch");
+            ret.resize(wcsnlen(ret.c_str(), cb_size / 2));
+
+            if (expand)
+            {
+                DWORD size = 4096;
+                std::wstring temp(size, 0);
+                do
+                {
+                    DWORD needed = ExpandEnvironmentStringsW(ret.c_str(), &temp[0], size);
+                    if (needed == 0)
+                        throw windows::registry::expand_error(std::to_string(GetLastError()));
+                    if (needed <= size)
+                    {
+                        temp.resize(needed-1);
+                        break;
+                    }
+                    size = (size > MAXDWORD / 2) ? MAXDWORD : size * 2;
+                    temp.resize(size);
+                } while (true);
+                ret = std::move(temp);
+            }
+
+            return ret;
+        }
+
+        std::list<std::wstring> key::get_multi_string(const std::wstring& value_name) const
+        {
+            DWORD cb_size = 0;
+            auto status = RegQueryValueExW(_handle, value_name.c_str(), NULL, NULL, NULL, &cb_size);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("read value error: %d", status);
+
+            auto buffer = std::make_unique<uint8_t[]>(cb_size);
+            status = RegQueryValueExW(_handle, value_name.c_str(), NULL, NULL, buffer.get(), &cb_size);
+            if (status != ERROR_SUCCESS)
+                throw nstd::runtime_error("read value error: %d", status);
+
+            uint8_t* ptr = buffer.get();
+            std::list<std::wstring> ret;
+            while (*reinterpret_cast<wchar_t*>(ptr) != NULL)
+            {
+                ret.emplace_back(reinterpret_cast<wchar_t*>(ptr));
+                ptr += (ret.back().length()+1) * sizeof(wchar_t);
+            }
+            return ret;
+        }
+        
+        std::list<std::wstring> key::list_subkeys() const
         {
             DWORD count = 0;
             DWORD max_len = 0;
             auto error = RegQueryInfoKeyW(
-                _key,
+                _handle,
                 NULL,
                 NULL,
                 NULL,
@@ -291,15 +395,15 @@ namespace windows
                 NULL,
                 NULL);
             if (error != ERROR_SUCCESS)
-                throw nstd::runtime_error("list subkeys error: %d", error);
+                throw nstd::runtime_error("query key info error: %d", error);
 
-            std::list<std::string> ret;
+            std::list<std::wstring> ret;
             std::vector<wchar_t> name(max_len + 1);
             for (DWORD i = 0; i < count; i++)
             {
                 DWORD len = max_len + 1;
                 error = RegEnumKeyExW(
-                    _key,
+                    _handle,
                     i,
                     &name[0],
                     &len,
@@ -310,17 +414,17 @@ namespace windows
                 if (error != ERROR_SUCCESS)
                     continue;
 
-                std::string utf8 = nstd::encoding::wide_to_utf8(std::wstring(&name[0], len));
-                ret.emplace_back(std::move(utf8));
+                ret.emplace_back(&name[0], len);
             }
             return ret;
         }
-        std::list<std::string> key::list_values() const
+
+        std::list<key::value_info> key::list_values() const
         {
             DWORD count = 0;
             DWORD max_len = 0;
             auto error = RegQueryInfoKeyW(
-                _key,
+                _handle,
                 NULL,
                 NULL,
                 NULL,
@@ -335,25 +439,28 @@ namespace windows
             if (error != ERROR_SUCCESS)
                 throw nstd::runtime_error("list values error: %d", error);
 
-            std::list<std::string> ret;
+            std::list<value_info> ret;
             std::vector<wchar_t> name(max_len + 1);
             for (DWORD i = 0; i < count; i++)
             {
                 DWORD len = max_len + 1;
+                DWORD type;
                 error = RegEnumValueW(
-                    _key,
+                    _handle,
                     i,
                     &name[0],
                     &len,
                     NULL,
-                    NULL,
+                    &type,
                     NULL,
                     NULL);
                 if (error != ERROR_SUCCESS)
                     continue;
 
-                std::string utf8 = nstd::encoding::wide_to_utf8(std::wstring(&name[0], len));
-                ret.emplace_back(std::move(utf8));
+                value_info info;
+                info.name = std::wstring(&name[0], len);
+                info.type = type;
+                ret.emplace_back(std::move(info));
             }
             return ret;
         }
@@ -362,34 +469,66 @@ namespace windows
 
 namespace windows
 {
+    namespace user
+    {
+        bool is_admin()
+        {
+            BOOL isAdmin = FALSE;
+            PSID adminGroup = NULL;
+
+            // Create a SID for the Administrators group.
+            SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+            if (AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup) == FALSE)
+                throw nstd::runtime_error("init std error: %d", GetLastError());
+            defer{ FreeSid(adminGroup); };
+
+            // Check whether the token of the calling thread is a member of the Administrators group.
+            if (CheckTokenMembership(NULL, adminGroup, &isAdmin) == FALSE)
+                throw nstd::runtime_error("check membership error: %d", GetLastError());
+
+            return isAdmin == TRUE;
+        }
+    }
+}
+
+namespace windows
+{
     namespace event_log
     {
-        void setup(const std::string& source, DWORD bytes)
+        void setup(const std::wstring& group, const std::wstring& source, DWORD bytes)
         {
-            auto key = windows::registry::key(R"(HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog)", REG_CREATED_NEW_KEY).create_key(source);
-            key.set_dword("Retention", 0);
-            key.set_dword("MaxSize", bytes);
-            key.set_multi_string("Sources", { source });
+            auto key = windows::registry::key(LR"(HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog)", REG_CREATED_NEW_KEY).create_key(group);
+            key.set_dword(L"Retention", 0);
+            key.set_dword(L"MaxSize", bytes);
+
+            std::list<std::wstring> sources = {source};
+            try
+            {
+                for (auto& src : key.get_multi_string(L"Sources"))
+                    if (src != source)
+                        sources.emplace_back(std::move(src));
+            } catch (...) {}
+            key.set_multi_string(L"Sources", sources);
 
             auto sub = key.create_key(source);
-            sub.set_dword("CustomSource", 1);
-            sub.set_expand_string("EventMessageFile", R"(%SystemRoot%\System32\EventCreate.exe)");
-            sub.set_dword("TypesSupported", EVENTLOG_SUCCESS | EVENTLOG_ERROR_TYPE | EVENTLOG_WARNING_TYPE | EVENTLOG_INFORMATION_TYPE | EVENTLOG_AUDIT_SUCCESS | EVENTLOG_AUDIT_FAILURE);
+            sub.set_dword(L"CustomSource", 1);
+            sub.set_expand_string(L"EventMessageFile", LR"(%SystemRoot%\System32\EventCreate.exe)");
+            sub.set_dword(L"TypesSupported", EVENTLOG_SUCCESS | EVENTLOG_ERROR_TYPE | EVENTLOG_WARNING_TYPE | EVENTLOG_INFORMATION_TYPE | EVENTLOG_AUDIT_SUCCESS | EVENTLOG_AUDIT_FAILURE);
         }
 
-        void report(HANDLE hLog, const std::string& log, WORD type, DWORD event_id)
+        void log::report(WORD type, const std::string& log)
         {
             const char* s[] = { log.c_str() };
             WORD len = log.length() >= 65535 ? 65535 : static_cast<WORD>(log.length());
-            if (ReportEventA(hLog, type, 0, event_id, NULL, 1, len, s, (PVOID) log.c_str()) != TRUE)
+            if (ReportEventA(_event_source, type, 0, 1, NULL, 1, len, s, (PVOID) log.c_str()) != TRUE)
                 throw nstd::runtime_error("ReportEventA error: %d", GetLastError());
         }
 
-        log::log(const std::string& source)
+        log::log(const std::wstring& source)
         {
-            _event_source = RegisterEventSourceA(NULL, source.c_str());
+            _event_source = RegisterEventSourceW(NULL, source.c_str());
             if (_event_source == NULL)
-                throw nstd::runtime_error("RegisterEventSource(%s) error: %d", source.c_str(), GetLastError());
+                throw nstd::runtime_error("RegisterEventSource(%ws) error: %d", source.c_str(), GetLastError());
         }
 
         log::~log()

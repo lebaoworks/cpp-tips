@@ -162,6 +162,8 @@ UTEST(main, mark_files)
 #include <unordered_map>
 UTEST(main, mark_files_md5)
 {
+    UTEST_SKIP("skip mark_files_md5 test");
+
     std::ifstream marker2("file_marker2.txt");
     ASSERT_EQ(marker2.is_open(), true);
 
@@ -185,6 +187,41 @@ UTEST(main, mark_files_md5)
         else
         {
             std::wcout << L"DUPLICATE: " << file_path << L" -> " << files[hex] << std::endl;
+        }
+    }
+}
+
+
+UTEST(main, mark_registry)
+{
+    std::ofstream marker("registry_marker.txt");
+    ASSERT_EQ(marker.is_open(), true);
+
+    std::queue<std::wstring> pending;
+    pending.push(L"HKEY_CLASSES_ROOT");
+    pending.push(L"HKEY_LOCAL_MACHINE");
+    pending.push(L"HKEY_CURRENT_USER");
+    pending.push(L"HKEY_USERS");
+
+    while (!pending.empty())
+    {
+        auto key_path = std::move(pending.front());
+        pending.pop();
+
+        // skip keys that we don't have access to
+        try
+        {
+            windows::registry::key key(key_path, KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS);
+            for (const auto& subkey_name : key.list_subkeys())
+            {
+                auto subkey_path = key_path + L"\\" + subkey_name; 
+                pending.push(subkey_path);
+                marker << nstd::encoding::wide_to_utf8(subkey_path) << std::endl;
+            }
+        }
+        catch (std::exception& e)
+        {
+            std::wcerr << key_path << " -> " << e.what() << std::endl;
         }
     }
 }

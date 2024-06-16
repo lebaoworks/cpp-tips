@@ -9,7 +9,6 @@
 
 // Standard C/C++ Libraries:
 #include <list>
-#include <vector>
 
 // Precompiled Headers:
 #include "nstd.hpp"
@@ -248,6 +247,7 @@ namespace windows
     namespace event_log
     {
         /// @brief Setup logging source in EventLog.
+        /// @param group name of group.
         /// @param source name of source.
         /// @param bytes maximum size of the event logs in bytes.
         /// @note setup() must run in context of an administrator.

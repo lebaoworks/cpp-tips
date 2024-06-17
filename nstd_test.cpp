@@ -158,17 +158,17 @@ UTEST_F(nstd_hash_benchmark, MD5)
 {
     nstd::hash::MD5 hash;
     hash.feed(utest_fixture->data.data(), utest_fixture->size);
-    auto hex = hash.hex_digest();
+    auto digest = hash.digest();
 }
 UTEST_F(nstd_hash_benchmark, SHA1)
 {
     nstd::hash::SHA1 hash;
     hash.feed(utest_fixture->data.data(), utest_fixture->size);
-    auto hex = hash.hex_digest();
+    auto digest = hash.digest();
 }
 UTEST_F(nstd_hash_benchmark, SHA256)
 {
     nstd::hash::SHA256 hash;
     hash.feed(utest_fixture->data.data(), utest_fixture->size);
-    auto hex = hash.hex_digest();
+    auto digest = hash.digest();
 }

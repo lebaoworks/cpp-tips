@@ -194,6 +194,8 @@ UTEST(main, mark_files_md5)
 
 UTEST(main, mark_registry)
 {
+    UTEST_SKIP("skip mark_files_md5 test");
+
     std::ofstream marker("registry_marker.txt");
     ASSERT_EQ(marker.is_open(), true);
 

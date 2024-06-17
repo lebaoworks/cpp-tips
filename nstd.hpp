@@ -175,15 +175,12 @@ namespace nstd
         class MD5
         {
         public:
-            struct digest
-            {
-                uint8_t data[16];
-            };
+            struct digest { uint8_t data[16]; };
 
         private:
             struct context
             {
-                uint32_t m_buf[4] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
+                uint32_t buffer[4] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
                 uint32_t m_bits[2] = { 0 };
                 uint8_t m_in[64] = { 0 };
 
@@ -325,7 +322,7 @@ namespace nstd
                         }
                         memcpy(p, d, t);
                         to_little_endian_4bytes(m_in, 16);
-                        transform(m_buf, reinterpret_cast<uint32_t*>(m_in)); // m_in is 4-byte aligned.
+                        transform(buffer, reinterpret_cast<uint32_t*>(m_in)); // m_in is 4-byte aligned.
                         d += t;
                         size -= t;
                     }
@@ -336,7 +333,7 @@ namespace nstd
                     {
                         memcpy(m_in, d, 64);
                         to_little_endian_4bytes(m_in, 16);
-                        transform(m_buf, reinterpret_cast<uint32_t*>(m_in)); // m_in is 4-byte aligned.
+                        transform(buffer, reinterpret_cast<uint32_t*>(m_in)); // m_in is 4-byte aligned.
                         d += 64;
                         size -= 64;
                     }
@@ -364,7 +361,7 @@ namespace nstd
                         // Two lots of padding:  Pad the first block to 64 bytes
                         memset(p, 0, count);
                         to_little_endian_4bytes(m_in, 16);
-                        transform(m_buf, reinterpret_cast<uint32_t*>(m_in)); // m_in is 4-byte aligned.
+                        transform(buffer, reinterpret_cast<uint32_t*>(m_in)); // m_in is 4-byte aligned.
 
                         // Now fill the next block with 56 bytes
                         memset(m_in, 0, 56);
@@ -379,11 +376,11 @@ namespace nstd
                     // Append length in bits and transform
                     memcpy(m_in + 56, m_bits, sizeof(m_bits));
 
-                    transform(m_buf, reinterpret_cast<uint32_t*>(m_in));
-                    to_little_endian_4bytes(reinterpret_cast<uint8_t*>(m_buf), 4);
+                    transform(buffer, reinterpret_cast<uint32_t*>(m_in));
+                    to_little_endian_4bytes(reinterpret_cast<uint8_t*>(buffer), 4);
 
                     // Now, m_buf contains checksum result.
-                    uint8_t* mBufUInt8 = reinterpret_cast<uint8_t*>(m_buf);
+                    uint8_t* mBufUInt8 = reinterpret_cast<uint8_t*>(buffer);
                     struct MD5::digest digest;
                     for (size_t i = 0; i < 16; ++i)
                         digest.data[i] = mBufUInt8[i];
@@ -421,10 +418,7 @@ namespace nstd
         class SHA1
         {
         public:
-            struct digest
-            {
-                uint8_t data[20];
-            };
+            struct digest { uint8_t data[20]; };
 
         private:
             struct context
@@ -567,10 +561,7 @@ namespace nstd
         class SHA256
         {
         public:
-            struct digest
-            {
-                uint8_t data[32];
-            };
+            struct digest { uint8_t data[32]; };
 
         private:
             static constexpr uint32_t K[] = {

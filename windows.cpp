@@ -131,28 +131,29 @@ namespace windows
 
         std::wstring process::image_path() const
         {
-            std::vector<WCHAR> buffer(MAX_PATH);
+            auto buffer = std::make_unique<wchar_t[]>(MAX_PATH);
+            DWORD buffer_size = MAX_PATH;
             while (true)
             {
-                DWORD cch_written = static_cast<DWORD>(buffer.size());
+                DWORD size = buffer_size;
                 BOOL success = QueryFullProcessImageNameW(
                     _handle,                // Process handle
                     0,                      // Flags -> 0 for Win32 Path
-                    &buffer[0],             // ImagePath
-                    &cch_written);          // Number of written characters.
+                    buffer.get(),           // ImagePath
+                    &size);                 // Number of written characters.
                 if (success == TRUE)
-                    return std::wstring(&buffer[0], cch_written);
+                    return std::wstring(buffer.get(), size);
 
                 DWORD err = GetLastError();
                 if (err == ERROR_INSUFFICIENT_BUFFER)
                 {
                     // Win32 path length is limited within half of USHORT (UNICODE_STRING.MaxLength / sizeof(WCHAR))
-                    if (buffer.size() > MAXSHORT)
+                    if (buffer_size > MAXSHORT)
                         throw std::runtime_error("invalid size");
-                    buffer.resize(buffer.size() * 2);
+                    buffer_size *= 2;
+                    buffer = std::make_unique<wchar_t[]>(buffer_size);
                 }
-                else
-                    throw nstd::runtime_error("query error: %d", err);
+                throw nstd::runtime_error("query error: %d", err);
             }
         }
 
@@ -183,10 +184,10 @@ namespace windows
 
             void* command_line_addr = params.CommandLine.Buffer;
             size_t command_line_cch = params.CommandLine.Length / sizeof(WCHAR);
-            std::vector<WCHAR> buffer(command_line_cch);
-            if (ReadProcessMemory(_handle, command_line_addr, buffer.data(), command_line_cch * sizeof(WCHAR), NULL) == FALSE)
+            auto buffer = std::make_unique<WCHAR[]>(command_line_cch);
+            if (ReadProcessMemory(_handle, command_line_addr, buffer.get(), command_line_cch * sizeof(WCHAR), NULL) == FALSE)
                 throw nstd::runtime_error("read process command line error: %d", GetLastError());
-            return std::wstring(buffer.data(), buffer.size());
+            return std::wstring(buffer.get(), command_line_cch);
         }
 
         bool process::search_memory(const void* data, size_t size) const
@@ -198,7 +199,7 @@ namespace windows
             GetSystemInfo(&si);
 
             MEMORY_BASIC_INFORMATION info;
-            std::vector<uint8_t> chunk(0x10000);
+            auto buffer = std::make_unique<uint8_t[]>(0x10000);
             void* p = nullptr;
             while (p < si.lpMaximumApplicationAddress)
             {
@@ -209,11 +210,11 @@ namespace windows
                     info.Protect != 0 &&
                     info.State != MEM_RESERVE)
                 {
-                    chunk.resize(info.RegionSize);
+                    buffer = std::make_unique<uint8_t[]>(info.RegionSize);
                     SIZE_T read;
-                    if (ReadProcessMemory(_handle, p, &chunk[0], info.RegionSize, &read))
+                    if (ReadProcessMemory(_handle, p, buffer.get(), info.RegionSize, &read))
                         for (size_t i = 0; i < (read - size); ++i)
-                            if (memcmp(data, &chunk[i], size) == 0)
+                            if (memcmp(data, &buffer[i], size) == 0)
                                 return true;
                 }
                 p = reinterpret_cast<void*>(reinterpret_cast<ULONG_PTR>(p) + info.RegionSize);
@@ -467,14 +468,14 @@ namespace windows
                 throw nstd::runtime_error("query key info error: %d", error);
 
             std::list<std::wstring> ret;
-            std::vector<wchar_t> name(max_len + 1);
+            auto name = std::make_unique<wchar_t[]>(max_len + 1);
             for (DWORD i = 0; i < count; i++)
             {
                 DWORD len = max_len + 1;
                 error = RegEnumKeyExW(
                     _handle,
                     i,
-                    &name[0],
+                    name.get(),
                     &len,
                     NULL,
                     NULL,
@@ -509,7 +510,7 @@ namespace windows
                 throw nstd::runtime_error("list values error: %d", error);
 
             std::list<value_info> ret;
-            std::vector<wchar_t> name(max_len + 1);
+            auto name = std::make_unique<wchar_t[]>(max_len + 1);
             for (DWORD i = 0; i < count; i++)
             {
                 DWORD len = max_len + 1;
@@ -517,7 +518,7 @@ namespace windows
                 error = RegEnumValueW(
                     _handle,
                     i,
-                    &name[0],
+                    name.get(),
                     &len,
                     NULL,
                     &type,

@@ -32,9 +32,27 @@ namespace windows
         };
 
         /// @brief List all files in the directory.
-        /// @param path directory path.
+        /// @param path path to the directory.
         /// @return list of files.
         std::list<file_info> list(const std::wstring& path);
+
+        /// @brief Check if the file exists.
+        /// @param path path to the file.
+        /// @return true if it is, false otherwise.
+        bool is_file_exists(const std::wstring& path) noexcept;
+
+        /// @brief Check if the directory exists.
+        /// @param path path to the directory.
+        /// @return true if it is, false otherwise.
+        bool is_directory_exists(const std::wstring& path) noexcept;
+
+        /// @brief Delete the file.
+        /// @param path path to the file.
+        void delete_file(const std::wstring& path);
+
+        // @brief Delete the directory.
+        /// @param path path to the directory.
+        void delete_directory(const std::wstring& path);
 
     }
 }

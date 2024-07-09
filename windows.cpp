@@ -1,7 +1,6 @@
 ﻿#include "windows.hpp"
 
 // Standard C/C++ Libraries:
-#include <algorithm>
 #include <map>
 #include <memory>
 
@@ -48,6 +47,42 @@ namespace windows
             } while (FindNextFileW(handle, &data) == TRUE);
 
             return ret;
+        }
+
+        bool is_file_exists(const std::wstring& path) noexcept
+        {
+            DWORD attributes = GetFileAttributesW(path.c_str());
+            return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+        }
+
+        bool is_directory_exists(const std::wstring& path) noexcept
+        {
+            DWORD attributes = GetFileAttributesW(path.c_str());
+            return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+        }
+
+        void delete_file(const std::wstring& path)
+        {
+            if (path.empty())
+                throw std::invalid_argument("empty path");
+            if (DeleteFileW(path.c_str()) == FALSE)
+                throw nstd::runtime_error("delete file error: %d", GetLastError());
+        }
+
+        void delete_directory(const std::wstring& path)
+        {
+            if (path.empty())
+                throw std::invalid_argument("empty path");
+            for (auto& entry : list(path))
+            {
+                auto entry_path = path + (path.back() == L'\\' ? L"" : L"\\") + entry.name;
+                if (entry.is_directory())
+                    delete_directory(entry_path);
+                else
+                    delete_file(entry_path);
+            }
+            if (RemoveDirectoryW(path.c_str()) == FALSE)
+                throw nstd::runtime_error("delete directory error: %d", GetLastError());
         }
     }
 }

@@ -140,7 +140,11 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nstd_test.cpp" />
     <ClCompile Include="ntfs_test.cpp" />
-    <ClCompile Include="pattern\encode.cpp" />
+    <ClCompile Include="pattern\creational_abstract_factory.cpp" />
+    <ClCompile Include="pattern\creational_builder.cpp" />
+    <ClCompile Include="pattern\creational_factory_method.cpp" />
+    <ClCompile Include="pattern\creational_prototype.cpp" />
+    <ClCompile Include="pattern\creational_singleton.cpp" />
     <ClCompile Include="windows\disk.cpp" />
     <ClCompile Include="windows\file.cpp" />
     <ClCompile Include="windows\process.cpp" />

@@ -45,7 +45,7 @@
     <ClCompile Include="hashing\hash_test.cpp">
       <Filter>hashing</Filter>
     </ClCompile>
-    <ClCompile Include="pattern\encode.cpp">
+    <ClCompile Include="pattern\creational_singleton.cpp">
       <Filter>pattern</Filter>
     </ClCompile>
     <ClCompile Include="windows\event_log.cpp">
@@ -74,6 +74,18 @@
     </ClCompile>
     <ClCompile Include="windows\registry_test.cpp">
       <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="pattern\creational_factory_method.cpp">
+      <Filter>pattern</Filter>
+    </ClCompile>
+    <ClCompile Include="pattern\creational_abstract_factory.cpp">
+      <Filter>pattern</Filter>
+    </ClCompile>
+    <ClCompile Include="pattern\creational_builder.cpp">
+      <Filter>pattern</Filter>
+    </ClCompile>
+    <ClCompile Include="pattern\creational_prototype.cpp">
+      <Filter>pattern</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

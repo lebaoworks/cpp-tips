@@ -1,38 +1,9 @@
-#include "windows.hpp"
+#include "registry.hpp"
 
-#include "utest.h"
+#include "../nstd.hpp"
+#include "../utest.h"
 
-
-UTEST(windows_process, list)
-{
-    ASSERT_GT(windows::process::list().size(), 0);
-}
-
-UTEST(windows_process, process)
-{
-    auto this_process = windows::process::process();
-    this_process.search_memory("a", 1);
-}
-
-UTEST(windows_process, process_image_path)
-{
-    auto this_process = windows::process::process();
-    ASSERT_GT(this_process.image_path().length(), 0);
-}
-
-UTEST(windows_process, process_command_line)
-{
-    auto this_process = windows::process::process();
-    ASSERT_GT(this_process.command_line().length(), 0);
-}
-
-UTEST(windows_process, process_search_memory)
-{
-    auto this_process = windows::process::process();
-    this_process.search_memory("a", 1);
-}
-
-UTEST(windows_regisry, create_delete)
+UTEST(windows, regisry_create_delete)
 {
     auto key = windows::registry::key(L"HKEY_CURRENT_USER", KEY_ALL_ACCESS);
     EXPECT_EXCEPTION(key.create_key(L"\\asd\\qwe"), std::invalid_argument);
@@ -41,7 +12,7 @@ UTEST(windows_regisry, create_delete)
     defer{ key.delete_key(L"bao"); };
 }
 
-UTEST(windows_regisry, dword)
+UTEST(windows, regisry_dword)
 {
     auto key = windows::registry::key(L"HKEY_CURRENT_USER", KEY_ALL_ACCESS);
     key.set_dword(L"bao", 123);
@@ -51,7 +22,7 @@ UTEST(windows_regisry, dword)
     EXPECT_EQ(value, 123);
 }
 
-UTEST(windows_regisry, string)
+UTEST(windows, regisry_string)
 {
     auto key = windows::registry::key(L"HKEY_CURRENT_USER", KEY_ALL_ACCESS);
     key.set_string(L"bao", L"zxc");
@@ -61,21 +32,21 @@ UTEST(windows_regisry, string)
     EXPECT_EQ(value, L"zxc");
 }
 
-UTEST(windows_registry, list_subkeys)
+UTEST(windows, regisry_list_subkeys)
 {
     auto key = windows::registry::key(L"HKEY_CURRENT_USER", KEY_ALL_ACCESS);
     auto subkeys = key.list_subkeys();
     ASSERT_GT(subkeys.size(), 0);
 }
 
-UTEST(windows_registry, list_values)
+UTEST(windows, regisry_list_values)
 {
     auto key = windows::registry::key(L"HKEY_CURRENT_USER\\Environment", KEY_ALL_ACCESS);
     auto values = key.list_values();
     ASSERT_GT(values.size(), 0);
 }
 
-UTEST(windows_regisry, expand_string)
+UTEST(windows, regisry_expand_string)
 {
     auto key = windows::registry::key(L"HKEY_CURRENT_USER", KEY_ALL_ACCESS);
     key.set_expand_string(L"bao", L"%systemroot%\\system32");
@@ -89,7 +60,7 @@ UTEST(windows_regisry, expand_string)
     EXPECT_NE(expand.find(L"system32"), std::wstring::npos);
 }
 
-UTEST(windows_regisry, multi_string)
+UTEST(windows, regisry_multi_string)
 {
     auto key = windows::registry::key(L"HKEY_CURRENT_USER", KEY_ALL_ACCESS);
     key.set_multi_string(L"bao", {L"1", L"2"});
@@ -100,20 +71,3 @@ UTEST(windows_regisry, multi_string)
     EXPECT_EQ(values.front(), L"1");
     EXPECT_EQ(values.back(), L"2");
 }
-
-UTEST(windows_event_log, log)
-{
-    if (windows::user::is_admin() == false)
-        UTEST_SKIP("test session is not running by admin user");
-
-    windows::event_log::setup(L"test_src", L"test_1");
-    windows::event_log::setup(L"test_src", L"test_2");
-
-    windows::event_log::log logger1(L"test_1");
-    logger1.info("abc");
-
-    windows::event_log::log logger2(L"test_2");
-    logger2.info("qwe");
-}
-
-

@@ -25,34 +25,58 @@
     <Filter Include="encoding">
       <UniqueIdentifier>{d3acf8c3-65c8-491b-954a-d3f8634626b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pattern">
+      <UniqueIdentifier>{37357af0-5e72-431a-97ba-b8bb98221376}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="windows.cpp">
-      <Filter>windows</Filter>
-    </ClCompile>
     <ClCompile Include="nstd_test.cpp">
       <Filter>nstd</Filter>
-    </ClCompile>
-    <ClCompile Include="windows_test.cpp">
-      <Filter>windows</Filter>
     </ClCompile>
     <ClCompile Include="ntfs_test.cpp">
       <Filter>ntfs</Filter>
     </ClCompile>
-    <ClCompile Include="encoding\encode.cpp">
+    <ClCompile Include="encoding\encode_test.cpp">
       <Filter>encoding</Filter>
     </ClCompile>
-    <ClCompile Include="hashing\hash.cpp">
+    <ClCompile Include="hashing\hash_test.cpp">
       <Filter>hashing</Filter>
+    </ClCompile>
+    <ClCompile Include="pattern\encode.cpp">
+      <Filter>pattern</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\event_log.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\event_log_test.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\file.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\disk.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\process.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\registry.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\user.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\process_test.cpp">
+      <Filter>windows</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\registry_test.cpp">
+      <Filter>windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="windows.hpp">
-      <Filter>windows</Filter>
-    </ClInclude>
     <ClInclude Include="nstd.hpp">
       <Filter>nstd</Filter>
     </ClInclude>
@@ -76,6 +100,24 @@
     </ClInclude>
     <ClInclude Include="hashing\sha256.hpp">
       <Filter>hashing</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\event_log.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\file.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\disk.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\process.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\registry.hpp">
+      <Filter>windows</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\user.hpp">
+      <Filter>windows</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

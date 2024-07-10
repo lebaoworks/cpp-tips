@@ -2,123 +2,12 @@
 
 // Standard C/C++ Headers:
 #include <string>
+#include <stdexcept>
+#include <list>
 
 // Standard Windows Headers:
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-
-// Standard C/C++ Libraries:
-#include <list>
-
-// Precompiled Headers:
-#include "nstd.hpp"
-
-namespace windows
-{
-    namespace file
-    {
-        struct file_info
-        {
-            std::wstring name;
-            DWORD attributes;
-            size_t size;
-            FILETIME creation_time;
-            FILETIME last_access_time;
-            FILETIME last_write_time;
-
-            /// @brief Check if the file is a directory.
-            /// @return true if it is, false otherwise.
-            bool is_directory() const noexcept;
-        };
-
-        /// @brief List all files in the directory.
-        /// @param path path to the directory.
-        /// @return list of files.
-        std::list<file_info> list(const std::wstring& path);
-
-        /// @brief Check if the file exists.
-        /// @param path path to the file.
-        /// @return true if it is, false otherwise.
-        bool is_file_exists(const std::wstring& path) noexcept;
-
-        /// @brief Check if the directory exists.
-        /// @param path path to the directory.
-        /// @return true if it is, false otherwise.
-        bool is_directory_exists(const std::wstring& path) noexcept;
-
-        /// @brief Delete the file.
-        /// @param path path to the file.
-        void delete_file(const std::wstring& path);
-
-        // @brief Delete the directory.
-        /// @param path path to the directory.
-        void delete_directory(const std::wstring& path);
-
-    }
-}
-
-namespace windows
-{
-    namespace disk
-    {
-        /// @brief List all disks.
-        /// @return list of disks.
-        /// @note currently only list fixed and removable drives.
-        std::list<std::string> list_logical();
-    }
-}
-
-namespace windows
-{
-    namespace process
-    {
-        struct process_info
-        {
-            DWORD id = 0;
-            std::wstring name = L"";
-            DWORD parent_id = 0;
-        };
-
-        /// @brief List all running processes.
-        /// @return list of processes.
-        std::list<process_info> list();
-
-        class process
-        {
-        private:
-            HANDLE _handle = NULL;
-        public:
-            
-            /// @brief Default constructor. Object is reference to current process.
-            process();
-
-            /// @brief Open process by process id.
-            /// @param process_id process id.
-            /// @param desired_access access to the process.
-            process(DWORD process_id, DWORD desired_access = PROCESS_ALL_ACCESS);
-            
-            /// @brief Destructor.
-            ~process();
-
-            /// @brief Get process image full path.
-            /// @return Full path to the process image.
-            /// @note require `PROCESS_QUERY_INFORMATION` access.
-            std::wstring image_path() const;
-
-            /// @brief Get process command line.
-            /// @return Command line of the process.
-            /// @note require `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ` access.
-            std::wstring command_line() const;
-
-            /// @brief Search memory space of the process.
-            /// @param data data to search.
-            /// @param size size of the data.
-            /// @return true if data found, false otherwise.
-            /// @note require `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ` access.
-            bool search_memory(const void* data, size_t size) const;
-        };
-    }
-}
 
 namespace windows
 {
@@ -246,56 +135,6 @@ namespace windows
             /// @return value's infomation.
             /// @note require `KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS` access.
             std::list<value_info> list_values() const;
-        };
-    }
-}
-
-namespace windows
-{
-    namespace user
-    {
-        /// @brief Check if current process as administrator.
-        /// @return true if it is, false otherwise.
-        bool is_admin();
-    }
-}
-
-namespace windows
-{
-    namespace event_log
-    {
-        /// @brief Setup logging source in EventLog.
-        /// @param group name of group.
-        /// @param source name of source.
-        /// @param bytes maximum size of the event logs in bytes.
-        /// @note setup() must run in context of an administrator.
-        void setup(const std::wstring& group, const std::wstring& source, DWORD bytes = 1024 * 1024);
-
-        class log
-        {
-        private:
-            HANDLE _event_source;
-
-            void report(WORD type, const std::string& log);
-
-        public:
-            log(const std::wstring& source);
-            log(const log& key) = delete;
-            log(log&& log) = delete;
-            ~log();
-
-            template<typename... Args>
-            void info(const std::string& format, const Args&... args) { report(EVENTLOG_INFORMATION_TYPE, nstd::format(format, args...)); }
-
-            template<typename... Args>
-
-            void debug(const std::string& format, const Args&... args) { report(EVENTLOG_AUDIT_SUCCESS, nstd::format(format, args...)); }
-
-            template<typename... Args>
-            void warning(const std::string& format, const Args&... args) { report(EVENTLOG_WARNING_TYPE, nstd::format(format, args...)); }
-
-            template<typename... Args>
-            void error(const std::string& format, const Args&... args) { report(EVENTLOG_ERROR_TYPE, nstd::format(format, args...)); }
         };
     }
 }

@@ -77,6 +77,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <ObjectFileName>$(IntDir)%(RelativeDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -92,6 +93,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <ObjectFileName>$(IntDir)%(RelativeDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -107,6 +109,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <ObjectFileName>$(IntDir)%(RelativeDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,6 +125,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <ObjectFileName>$(IntDir)%(RelativeDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -131,13 +135,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="encoding\encode.cpp" />
-    <ClCompile Include="hashing\hash.cpp" />
+    <ClCompile Include="encoding\encode_test.cpp" />
+    <ClCompile Include="hashing\hash_test.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nstd_test.cpp" />
     <ClCompile Include="ntfs_test.cpp" />
-    <ClCompile Include="windows.cpp" />
-    <ClCompile Include="windows_test.cpp" />
+    <ClCompile Include="pattern\encode.cpp" />
+    <ClCompile Include="windows\disk.cpp" />
+    <ClCompile Include="windows\file.cpp" />
+    <ClCompile Include="windows\process.cpp" />
+    <ClCompile Include="windows\process_test.cpp" />
+    <ClCompile Include="windows\registry.cpp" />
+    <ClCompile Include="windows\registry_test.cpp" />
+    <ClCompile Include="windows\user.cpp" />
+    <ClCompile Include="windows\event_log.cpp" />
+    <ClCompile Include="windows\event_log_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="encoding\encode.hpp" />
@@ -148,7 +160,12 @@
     <ClInclude Include="nstd.hpp" />
     <ClInclude Include="ntfs.hpp" />
     <ClInclude Include="utest.h" />
-    <ClInclude Include="windows.hpp" />
+    <ClInclude Include="windows\disk.hpp" />
+    <ClInclude Include="windows\file.hpp" />
+    <ClInclude Include="windows\process.hpp" />
+    <ClInclude Include="windows\registry.hpp" />
+    <ClInclude Include="windows\user.hpp" />
+    <ClInclude Include="windows\event_log.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

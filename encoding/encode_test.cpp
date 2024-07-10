@@ -25,7 +25,6 @@ UTEST(encoding, utf8_to_wide)
         auto wide_str = encoding::utf8_to_wide(utf8_str);
         ASSERT_EQ(wide_str, expected);
     }
-
 }
 
 UTEST(encoding, wide_to_utf8)

@@ -16,11 +16,14 @@
     <Filter Include="windows">
       <UniqueIdentifier>{2c068774-2f5a-432b-a6da-4c3d498edff4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="test">
-      <UniqueIdentifier>{4c25f01b-0e83-439d-963c-c0e0b730b7ce}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ntfs">
       <UniqueIdentifier>{924f33d3-5ba7-4037-a082-0eea2cbf781f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hashing">
+      <UniqueIdentifier>{6e223fe7-65dd-4ce5-ae86-e1115a1262b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="encoding">
+      <UniqueIdentifier>{d3acf8c3-65c8-491b-954a-d3f8634626b1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -39,19 +42,40 @@
     <ClCompile Include="ntfs_test.cpp">
       <Filter>ntfs</Filter>
     </ClCompile>
+    <ClCompile Include="encoding\encode.cpp">
+      <Filter>encoding</Filter>
+    </ClCompile>
+    <ClCompile Include="hashing\hash.cpp">
+      <Filter>hashing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="windows.hpp">
       <Filter>windows</Filter>
-    </ClInclude>
-    <ClInclude Include="utest.h">
-      <Filter>test</Filter>
     </ClInclude>
     <ClInclude Include="nstd.hpp">
       <Filter>nstd</Filter>
     </ClInclude>
     <ClInclude Include="ntfs.hpp">
       <Filter>ntfs</Filter>
+    </ClInclude>
+    <ClInclude Include="hashing\hash.hpp">
+      <Filter>hashing</Filter>
+    </ClInclude>
+    <ClInclude Include="encoding\encode.hpp">
+      <Filter>encoding</Filter>
+    </ClInclude>
+    <ClInclude Include="utest.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hashing\md5.hpp">
+      <Filter>hashing</Filter>
+    </ClInclude>
+    <ClInclude Include="hashing\sha1.hpp">
+      <Filter>hashing</Filter>
+    </ClInclude>
+    <ClInclude Include="hashing\sha256.hpp">
+      <Filter>hashing</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -131,6 +131,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="encoding\encode.cpp" />
+    <ClCompile Include="hashing\hash.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nstd_test.cpp" />
     <ClCompile Include="ntfs_test.cpp" />
@@ -138,6 +140,11 @@
     <ClCompile Include="windows_test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="encoding\encode.hpp" />
+    <ClInclude Include="hashing\md5.hpp" />
+    <ClInclude Include="hashing\hash.hpp" />
+    <ClInclude Include="hashing\sha1.hpp" />
+    <ClInclude Include="hashing\sha256.hpp" />
     <ClInclude Include="nstd.hpp" />
     <ClInclude Include="ntfs.hpp" />
     <ClInclude Include="utest.h" />

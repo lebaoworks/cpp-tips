@@ -143,6 +143,7 @@
     <ClCompile Include="pattern\creational_abstract_factory.cpp" />
     <ClCompile Include="pattern\creational_builder.cpp" />
     <ClCompile Include="pattern\creational_factory_method.cpp" />
+    <ClCompile Include="pattern\creational_object_pool.cpp" />
     <ClCompile Include="pattern\creational_prototype.cpp" />
     <ClCompile Include="pattern\creational_singleton.cpp" />
     <ClCompile Include="windows\disk.cpp" />

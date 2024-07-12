@@ -87,6 +87,9 @@
     <ClCompile Include="pattern\creational_prototype.cpp">
       <Filter>pattern</Filter>
     </ClCompile>
+    <ClCompile Include="pattern\creational_object_pool.cpp">
+      <Filter>pattern</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="nstd.hpp">

@@ -146,6 +146,8 @@
     <ClCompile Include="pattern\creational_object_pool.cpp" />
     <ClCompile Include="pattern\creational_prototype.cpp" />
     <ClCompile Include="pattern\creational_singleton.cpp" />
+    <ClCompile Include="pattern\structural_adapter.cpp" />
+    <ClCompile Include="pattern\structural_bridge.cpp" />
     <ClCompile Include="windows\disk.cpp" />
     <ClCompile Include="windows\file.cpp" />
     <ClCompile Include="windows\process.cpp" />

@@ -140,6 +140,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nstd_test.cpp" />
     <ClCompile Include="ntfs_test.cpp" />
+    <ClCompile Include="pattern\behavior_chain_of_responsibility.cpp" />
+    <ClCompile Include="pattern\behavior_command.cpp" />
+    <ClCompile Include="pattern\behavior_iterator.cpp" />
     <ClCompile Include="pattern\creational_abstract_factory.cpp" />
     <ClCompile Include="pattern\creational_builder.cpp" />
     <ClCompile Include="pattern\creational_factory_method.cpp" />
@@ -148,6 +151,11 @@
     <ClCompile Include="pattern\creational_singleton.cpp" />
     <ClCompile Include="pattern\structural_adapter.cpp" />
     <ClCompile Include="pattern\structural_bridge.cpp" />
+    <ClCompile Include="pattern\structural_decorator.cpp" />
+    <ClCompile Include="pattern\structural_facade.cpp" />
+    <ClCompile Include="pattern\structural_flyweight.cpp" />
+    <ClCompile Include="pattern\structural_proxy.cpp" />
+    <ClCompile Include="pattern\structural_composite.cpp" />
     <ClCompile Include="windows\disk.cpp" />
     <ClCompile Include="windows\file.cpp" />
     <ClCompile Include="windows\process.cpp" />

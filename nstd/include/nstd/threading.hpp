@@ -1,12 +1,13 @@
 #pragma once
 
-#include <atomic>
-#include <vector>
-#include <mutex>
 #include <condition_variable>
-#include <queue>
+#include <functional>
 #include <future>
+#include <mutex>
+#include <queue>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace nstd
 {
@@ -53,7 +54,7 @@ namespace nstd
             try
             {
                 for (size_t i = 0; i < count; ++i)
-                _threads.emplace_back([this] { work(); });
+                    _threads.emplace_back([this] { work(); });
             }
             catch (...)
             {

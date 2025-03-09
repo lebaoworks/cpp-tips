@@ -1,10 +1,10 @@
 #pragma once
 
 // Encoding
-#include <string>
-#include <locale>
 #include <codecvt>
 #include <cstdint>
+#include <locale>
+#include <string>
 
 namespace nstd
 {

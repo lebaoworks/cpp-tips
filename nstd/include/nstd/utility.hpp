@@ -57,3 +57,22 @@ namespace nstd
             std::invalid_argument(nstd::format(format, args...)) {}
     };
 }
+
+// Time counter
+#include <chrono>
+namespace nstd
+{
+    class time_counter
+    {
+    private:
+        std::chrono::time_point<std::chrono::high_resolution_clock> _start;
+    public:
+        time_counter() :
+            _start(std::chrono::high_resolution_clock::now()) {}
+
+        inline void reset() { _start = std::chrono::high_resolution_clock::now(); }
+
+        template <typename T>
+        size_t elapsed() const { return std::chrono::duration_cast<T>(std::chrono::high_resolution_clock::now() - _start).count(); }
+    };
+}

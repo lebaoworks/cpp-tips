@@ -1,10 +1,10 @@
-#include "hash.hpp"
-#include "../utest.h"
+#include <gtest/gtest.h>
+#include <nstd/hash.hpp>
 
-UTEST(hashing, MD5)
+TEST(nstd_hash, MD5)
 {
     {
-        hashing::hash<hashing::MD5> hash;
+        nstd::hash<nstd::MD5> hash;
         hash.feed("lebaoworks@gmail", 16);
 
         // 1 hex digest
@@ -21,17 +21,17 @@ UTEST(hashing, MD5)
 
     {
         // 4 padding
-        hashing::hash<hashing::MD5> hash;
+        nstd::hash<nstd::MD5> hash;
         hash.feed("6eabd16e239f03cf3187237747f78c8f0ea07e456eabd16e23aaaaaaa", 57);
         auto hex = hash.hex_digest();
         EXPECT_EQ(hex, "15424B726B74DFF743E8C7128E137C9F");
     }
 }
 
-UTEST(hashing, SHA1)
+TEST(nstd_hash, SHA1)
 {
     {
-        hashing::hash<hashing::SHA1> hash;
+        nstd::hash<nstd::SHA1> hash;
         hash.feed("lebaoworks@gmail", 16);
 
         // 1 hex digest
@@ -48,17 +48,17 @@ UTEST(hashing, SHA1)
 
     {
         // 4 padding
-        hashing::hash<hashing::SHA1> hash;
+        nstd::hash<nstd::SHA1> hash;
         hash.feed("6eabd16e239f03cf3187237747f78c8f0ea07e456eabd16e23aaaaaaa", 57);
         auto hex = hash.hex_digest();
         EXPECT_EQ(hex, "D50DB2A34B7513AABC3E63E0EC913C2953096D2E");
     }
 }
 
-UTEST(hashing, SHA256)
+TEST(nstd_hash, SHA256)
 {
     {
-        hashing::hash<hashing::SHA256> hash;
+        nstd::hash<nstd::SHA256> hash;
         hash.feed("lebaoworks@gmail", 16);
 
         // 1 hex digest
@@ -75,41 +75,42 @@ UTEST(hashing, SHA256)
 
     {
         // 4 padding
-        hashing::hash<hashing::SHA256> hash;
+        nstd::hash<nstd::SHA256> hash;
         hash.feed("6eabd16e239f03cf3187237747f78c8f0ea07e456eabd16e23aaaaaaa", 57);
         auto hex = hash.hex_digest();
         EXPECT_EQ(hex, "C48EF574E6D59BD0DEFA5D1002EE0B8A2B42C16982A798FDD73F2A2D5E19FE70");
     }
 }
 
-struct hashing_benchmark
+struct hash_benchmark : public testing::Test
 {
     std::string data;
     size_t size;
-};
-UTEST_F_SETUP(hashing_benchmark)
-{
-    utest_fixture->size = 5000000;
-    utest_fixture->data = std::string(utest_fixture->size, 0);
-}
-UTEST_F_TEARDOWN(hashing_benchmark)
-{}
 
-UTEST_F(hashing_benchmark, MD5)
+    void SetUp() override
+    {
+        size = 5000000;
+        data = std::string(size, 0);
+    }
+};
+
+TEST_F(hash_benchmark, MD5)
 {
-    hashing::MD5 hash;
-    hash.feed(utest_fixture->data.data(), utest_fixture->size);
+    nstd::MD5 hash;
+    hash.feed(data.data(), size);
     auto digest = hash.finalize();
 }
-UTEST_F(hashing_benchmark, SHA1)
+
+TEST_F(hash_benchmark, SHA1)
 {
-    hashing::SHA1 hash;
-    hash.feed(utest_fixture->data.data(), utest_fixture->size);
+    nstd::SHA1 hash;
+    hash.feed(data.data(), size);
     auto digest = hash.finalize();
 }
-UTEST_F(hashing_benchmark, SHA256)
+
+TEST_F(hash_benchmark, SHA256)
 {
-    hashing::SHA256 hash;
-    hash.feed(utest_fixture->data.data(), utest_fixture->size);
+    nstd::SHA256 hash;
+    hash.feed(data.data(), size);
     auto digest = hash.finalize();
 }
